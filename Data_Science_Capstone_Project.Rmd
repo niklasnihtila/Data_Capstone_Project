@@ -1,8 +1,11 @@
 ---
-title: "R Notebook"
+title: "Impact of regulation changes and interest rates on private company acquisitions"
+author: "Niklas Nihtila"
+date: "4/25/2021"
 output:
-  pdf_document: default
-  html_notebook: default
+    html_notebook:
+        toc: yes
+        toc_float: yes
 ---
 ```{r, message = FALSE}
 library(ISLR)
@@ -27,18 +30,25 @@ library(caret)
 
 # Abstract
 
-Over the last two decades we have seen a decrease in IPO activity, and an increase in Private Equity activity, due to the passing of legislations that were favorable to the Private Equity industry and unfavorable to public markets, increased availability of capital within the industry, and the attractiveness of higher average returns in the Private Equity markets compared to public markets.
+Over the last two decades we have seen a decrease in Initial Public Offering  activity, and an increase in Private Equity activity, due to the passing of legislation that were favorable to the Private Equity industry and unfavorable to public markets and increased availability of capital within the private markets. This has helped fuel the private company acquisition market. 
+
+We use company acquisition data from DealStats to assess the impact of different regulations and the interest rate environment on the private company acquisition prices between 1999 and 2018. The results of the analysis points that even though these regulation as well as interest rates could have had an impact on acquisition prices the main impact is from the overall economic environment and sentiment. We see high acquisition prices and activity in times of economic growth and slowdown in recessions and as regulations are usually enacted as response to economic crises and the interest rate environment is highly correlated with the economic the variables show unexpected relationships with acquisition prices.
 
 # Introduction
 
-Regulation changes and increased capital availability have affected entering the public markets directly. We see this in the decrease in IPO's over the last few decades, from ... to ... (), as more and more companies prefer to stay private. As public market companies become few in numbers the private equity sphere has grown quickly from a total size of ... in ... to ... in ... (). With the growth in Private Equity this paper focuses on the effect these regulation changes and interest rate environment have had on the acquisition market as a whole.
+Private company acquisitions have been common for decades. Acquisitions allow companies to grow faster and it helps them move into new markets quickly. One large contributor to the total private acquisition market is the Private Equity industry. Private Equity buyout funds, which became popular in the 1980's, complete vast amounts of acquisitions of both private and public companies in the hopes of streamlining the companies for higher efficiency and high returns. The rise of private equity in the last few decades has been helped by increasing capital availability and changes in the regulatory environment. These changes have also affected the public equity markets significantly as there has been a sharp decline in Initial Public Offerings. 
 
+The aim of this study is to look at how these regulation environment changes as well as the interest rate environment has affected the size of all private company acquisitions. The regulations that the study takes into account are the Regulation Fair Disclosure, Sarbanes-Oxley Act, Global Analyst Research Settlement and the Jumpstart our Business Start-Ups act. The other important portion is the effect of the interest rate environment on the acquisition prices which will be assessed by looking at the impact of changes in the federal funds rate. Even though the effect of the regulation pieces have been studied in-depth, the effect of the pieces to the overall acquisition market has not been looked at before.
 
-Previous Work.
+Previous work has found the three of the four regulation changes to have affected mainly the IPO market. Sarbanes-Oxley act and the Global Analyst Research Settlement contributed to the price of either going public or staying public. Sarbanes-Oxley act of 2002 is found to have increased compliance costs for public companies with under $1 billion in revenue by 171% in average. The Global Analyst Research Settlement of 2003 affected IPO costs directly, one study found that following the Global Settlement it has become more difficult to secure equity research for IPOs and the costs of that research have become more expensive.
 
+Regulation Fair Disclosure's affect on public and private markets is expected to be minimal. The main impact is by increased liability and slight increase compliance costs as public companies are required to disclose any material information to the public.
 
-Even though the effect of the regulation pieces have been studied in-depth, the effect of the pieces to the overall acquisition market has not been looked at before.
+The JOBS act  of 2012 affected both public and private markets, through increased capital availability in the private markets and looser IPO regulation for smaller companies. The main idea behind the JOBS act was to increase IPO activity by allowing small-cap companies to test the waters for an IPO and disclose less information to the public. However with allowing easier ways to raise capital private companies the impact was on the contrary, companies stayed private longer and enjoyed the privacy of not being a public company.
 
+All these regulations were not built to have direct impact on the private company acquisitions. However, as less companies set their sights on an IPO other exit strategies became more popular, especially in the Private Equity industry. Companies were more inclined to be acquired than to go public as the premium for acquisitions lowered due to the increased costs of going public. This is expected to translate to increase in acquisition activity as well as increase in acquisition prices.
+
+Unlike the regulations above, the interest rate environment has a direct impact on company valuations. Not only do higher interest rates lower the incentive of leveraged buy-outs but they also affect company valuations negatively. The valuation industry relies heavily on discounted cash flow models, expected future cash flows are discounted at a discount rate (higher discount rate equals lower valuation). The discount rate in turn takes a risk-free rate, usually the yield of a 10-yr or 20-yr treasury bill, into account and as the risk-free rate rises so does the overall discount rate. 
 
 
 
@@ -47,7 +57,7 @@ Even though the effect of the regulation pieces have been studied in-depth, the 
 Maybe some short intro
 
 
-### Importing Dataset
+### Importing Datasets
 
 ```{r}
 Deal_Stats <- read.csv(file = "FINC-412DS-MasterData3-20-2019--2.0(1).csv", header=TRUE, sep=",")
@@ -55,14 +65,25 @@ int_rate <- read.csv(file = "int_rate.csv", header = TRUE, sep = ",")
 CPI <- read.csv(file = "CPI_U_BLS.csv", header = TRUE, sep = ",")
 ```
 
-The main dataset used in this paper is a datapull from DealStats. Dealstats is a database containing historical company acquisitions and is mostly used for acquisition valuation purposes. In this case the data pulled from DealStats contains `r nrow(Deal_Stats)` acquistions over a time period from 1999 to 2018. The dataset includes acquisitions done outside the US as well as public company acquistions. As the purpose of the study is to look at private company transactions in the US I have filtered out acquisitions of public companies, but the dataset still includes acquisitions of private companies by public entities as these are still categorizes as private company acquisitions. In addition acquisitions where both parties are foreign companies have been filtered out to only focus on transactions of US based companies. 
+The main dataset used in this paper is a datapull from DealStats. Dealstats is a database containing historical company acquisitions and is mostly used for acquisition valuation purposes. In this case the data pulled from DealStats contains `r nrow(Deal_Stats)` acquistions over a time period from 1999 to 2018. The dataset includes acquisitions done outside the US as well as public company acquistions. As the purpose of the study is to look at private company transactions in the US I have filtered out acquisitions of public companies, but the dataset still includes acquisitions of private companies by public entities as these are still categorizes as private company acquisitions. In addition acquisitions where both parties are foreign companies have been filtered out to only focus on transactions of US based companies.
 
 ```{r}
 Deal_Stats <- filter(Deal_Stats, Deal_Stats$TargetType != "Public")
 Deal_Stats <- filter(Deal_Stats, Deal_Stats$TargetCountry == "United States" | Deal_Stats$AcquirerCountry == "United States")
 ```
 
-The remained number of acquisitions is `r nrow(Deal_Stats)`.
+Every acquisition entry also has the percentage acquired by the owner. In almost all acquisitions the percentage acquired is 100% but we do have some NA values. Due to not knowing the percentage acquired the MVICPrice might distort the actual transaction and thus the NA values will be filtered out of the dataset.
+
+```{r}
+Deal_Stats$PercentageAcquired <-  as.numeric(sub("%","",Deal_Stats$PercentageAcquired))/100
+Deal_Stats %>% count(PercentageAcquired != 1)
+```
+
+```{r}
+Deal_Stats <- filter(Deal_Stats, Deal_Stats$PercentageAcquired == 1)
+```
+
+The remaining number of acquisitions is `r nrow(Deal_Stats)`.
 
 ### Cleaning CPI dataset (https://stackoverflow.com/questions/50167509/converting-monthly-data-to-daily-in-r)
 
@@ -74,7 +95,6 @@ CPI <- do.call("rbind", lapply(1:nrow(CPI), function(i)
 data.frame(DATE = seq(CPI$DATE[i], 
                   (seq(CPI$DATE[i],length=2,by="months") - 1)[2], by = "1 days"), 
                   CPI_U = CPI$CPI_U[i])))
-CPI
 ```
 
 ### Creating Regulation Variables
@@ -85,10 +105,8 @@ In this study we focus on four regulation pieces that have been enacted during t
 Reg_FD <- anydate("Oct 23 2000")
 SOX <- anydate("Jul 30 2002")
 GARS <- anydate("Apr 28 2003")
-JOBS <- anydate("Apr 5 2015")
+JOBS <- anydate("Apr 5 2012")
 ```
-
-
 
 
 ### Interest rate
@@ -97,8 +115,7 @@ In addition to the regulation variables and the CPI variable another point of in
 
 ### Merging Datasets
 
-To perform the data analysis we merge all required variables into a single dataset.
-
+To perform the data analysis the datasets and all required variables are merged into a single dataset.
 
 ```{r}
 Deal_Stats <- transform(Deal_Stats, SaleDate = anydate(SaleDate))
@@ -122,68 +139,30 @@ Data$JOBS <-  factor(Data$JOBS, levels = c(0,1), labels = c("No","Yes"))
 
 ### Filtering out unnecessary variables
 
-The complete dataset contains 170 variables including the ones added for the purpose of this paper. In this analysis we will only make use of 14 variables; PercentageAcquired, MVICPrice, Sale date, Feds Fund rate, regulation variables, Net Sales and CPI_U. The other variables that are not the main focus of this paper are used for the following purposes. PercentageAcquired is used to assess the real amount of transaction as the MVICPrice, or market value of invested capital, represents the enterprise value of whole the entity and Net sales variable is used to capture the variation between the size difference of the acquired companies.
+The complete dataset contains 170 variables including the ones added for the purpose of this paper. In this analysis we will only make use of 14 variables; PercentageAcquired, MVICPrice, Sale date, Feds Fund rate, regulation variables, Net Sales and CPI_U. The other variables that are not the main focus of this paper are used for the following purposes. PercentageAcquired is used to assess the real amount of transaction as the MVICPrice, or market value of invested capital, represents the enterprise value of whole the entity and Net sales variable is used to capture the variation between the size difference of the acquired companies. These variables will be added into a new dataset called Df which will be used for the rest of the study.
 
 ```{r}
 Df <- data.frame("PercentageAcquired"= Data$PercentageAcquired, "MVICPrice" = Data$MVICPrice, "SaleDate" = Data$SaleDate, "FFR" = Data$DFF, "Reg_FD" = Data$Reg_FD, "SOX" = Data$SOX, "GARS" = Data$GARS, "JOBS" = Data$JOBS, "NetSales" = Data$NetSales, "EBIT" = Data$TargetEBIT, "CPI_U" = Data$CPI_U)
 Df$MVICPrice <- as.numeric(gsub('[$,]', '', Df$MVICPrice))
 Df$NetSales <- as.numeric(gsub('[$,]', '', Df$NetSales))
-Df$EBIT <- ifelse(grepl("\\(.*\\)", Df$EBIT),paste0("-", gsub("\\(|\\)", "", Df$EBIT)),Df$EBIT)
-Df$EBIT <- as.numeric(gsub('[$,]', '', Df$EBIT))
-Df$PercentageAcquired <-  as.numeric(sub("%","",Df$PercentageAcquired))/100
-head(Df)
 ```
 
-### Separating SaleDate Variable for Acquisition trends
 
-```{r}
-Df <- separate(Df, "SaleDate", c("Year", "Month", "Day"), sep = "-")
-Df$SaleDate<-as.Date(with(Df,paste(Year,Month,Day,sep="-")),"%Y-%m-%d")
-```
+## Dataset Trends
 
-## Outliers
-### filter out $1 acquisitions and target companies with $0 revenue
-
-```{r}
-Df <- filter(Df, Df$MVICPrice > 1)
-Df <- filter(Df, Df$NetSales > 0)
-```
-
-### Filter out PercentageAcquired NA's
-
-```{r}
-Df %>% count(PercentageAcquired != 1)
-```
-
-There are 83 objects with a PercentageAcquired value missing. To
-
-```{r}
-Df <- filter(Df, Df$PercentageAcquired == 1)
-```
-
-## Acquisition & Macro-economic trends
-
-### Number of transactions per year
-
-```{r}
-Transactions_by_year <- Df %>% count(Year)
-ggplot(Transactions_by_year , aes(x = Year, y = n, group = 1)) +
-  geom_line()
-```
-The number of transactions follows closely the 
-
+To get a better grasp on the some crucial trends of the private company acquisition market as well as the macroeconomic variables I looked at trends in the acquisition number, sizes and in the federal funds rate.
 
 ### Number of transactions per Month
 
 
 ```{r}
+Df <- separate(Df, "SaleDate", c("Year", "Month", "Day"), sep = "-")
+Df$SaleDate<-as.Date(with(Df,paste(Year,Month,Day,sep="-")),"%Y-%m-%d")
 Transaction_by_month <- Df %>% count(Year,Month)
 Transaction_by_month$Date <- paste(Transaction_by_month$Year,Transaction_by_month$Month,"01", sep = "-")
 Transaction_by_month$Date <- as.Date(Transaction_by_month$Date)
 ggplot() + 
   geom_line(data = Transaction_by_month, aes(x = Date, y = n)) +
-  theme_minimal() +
-  theme(text = element_text(size=18)) +
   labs(title = "Acquisition Transactions by Month",
 y = "Number of Transactions") 
 ```
@@ -193,146 +172,147 @@ y = "Number of Transactions")
 ```{r}
 ggplot(Df , aes(x = SaleDate, y = FFR, group = 1)) +
   geom_line() +
-  theme_minimal() +
-  theme(text = element_text(size=18)) +
-  labs(y = "Federal Funds Rate (%)", x = "Date")
+  labs(title = "Federal Funds Rate", y = "Federal Funds Rate (%)", x = "Date")
 ```
 
 ### MVIC/Date
 
 ```{r}
 TotalSize_Month <-  Df %>% 
-    group_by(Year=year(SaleDate),Month=month(SaleDate,label = T)) %>% 
-    summarise(MVICPrice=sum(MVICPrice,na.rm = T))
+    group_by(Year = year(SaleDate) ,Month = month(SaleDate,label = T)) %>% 
+    summarise(MVICPrice = sum(MVICPrice, na.rm = T))
 TotalSize_Month$Date <- paste(TotalSize_Month$Year,TotalSize_Month$Month,"01", sep = "-")
 TotalSize_Month$Date <- as.Date(Transaction_by_month$Date)
 ggplot() + 
  geom_line(data = TotalSize_Month, aes(x = Date, y = MVICPrice, group = 1)) +
-  theme_minimal() +
-  theme(text = element_text(size=18)) +
   labs(title = "Acquisition Sizes by Month",
 y = "Total Size of Transactions")
 ```
 
-```{r}
 
+## Exploratory Data Analysis
 
-ggplot(Df, aes(x = SaleDate, y = MVICPrice)) +
-  geom_line() +
-  theme_minimal() +
-  theme(text = element_text(size=18)) +
-  labs(title = "Acquisition Prices in the last 20 years",
-y = "MVIC Price", x = "Acquisition Date")
-```
-
-
-```{r}
-ggplot(Df , aes(x = SaleDate, y = CPI_U, group = 1)) +
-  geom_line() +
-  theme_minimal() +
-  theme(text = element_text(size=18)) +
-  labs(y = "Federal Funds Rate (%)", x = "Date")
-```
-
-
-# Exploratory Data Analysis
+Exploratory data analysis methods, graphing summarizing, was used to help distinguish the variable distributions and possible relationship as well as help determine the usability of different models.
 
 ### Summary
+
+The summary below shows the distributions of all variables in the Df dataset that will be used in the modeling.
 
 ```{r}
 summary(Df)
 ```
 
+Based on the summary we have acquisitions ranging from zero dollars to over 17 billion dollars, similarly we have NetSales with a similar range from 0 dollars to over 17 billion dollars. The dataset includes acquisitions with the MVICPrice at 0 dollars, this is either due to a missing value for the MVICPrice or some other agreement with a 0 dollar acquisition price. These acquisitions do not have any impact in the overall acquisition market size but do impose outliers for the data analysis which is why they will be filtered from the dataset.
 
+```{r}
+Df <- filter(Df, Df$MVICPrice != 0)
+Df <- filter(Df, Df$NetSales > 0)
+summary(Df)
+```
+The distributions of these two variables are quite similar with some differences. The NetSales mean is slightly lower than the mean MVICPrice, but the 1st and 2nd quartiles are higher for NetSales. For the Regulations we see the number of acquisition before and after each regulation. For Reg_FD, SOX and GARS the number of acquisitions before the regulation is much higher due to being enacted in the early 2000's and for JOBS there are more acquisitions before as the act was enacted in 2014. 
 
-### Plots of Response variable with Explanatory variables
+### MVICPrice and NetSales/CPI variables
 
-To visualize the relationship between NetSales and MVICPrice we can plot a scatterplot.
+To visualize the relationship between NetSales and MVICPrice we can plot a scatterplot:
 
 ```{r}
 ggplot(Df, aes(x = MVICPrice, y = NetSales)) +
-  geom_point(size = 0.5 , alpha = 0.5)
+  geom_point(size = 0.2 , alpha = 0.2) +
+  labs(title = "Net Sales to MVICPrice",
+x = "NetSales", y = "MVICPrice")
 ```
 
-Both variables are skewed to the right due to the large variance in acquisition price and target company sizes. To get a better understanding of the difference we can use a logarithmic transformation on both variables.
-
+Both variables are highly skewed to the right due to the large variance in acquisition price and target company sizes.
+To get a better understanding of the relationship we can use a logarithmic transformation on both variables.
 
 ```{r}
 ggplot(Df, aes(x = log(MVICPrice), y = log(NetSales))) +
-  geom_point(size = 0.1, alpha = 0.2) +
-  theme_minimal() +
-  theme(text = element_text(size=15)) +
+  geom_point(size = 0.2, alpha = 0.2) +
   labs(title = "Log Net Sales to Log MVICPrice",
 x = "Log(NetSales)", y = "Log(MVICPrice)")
 ```
 
 With the logarithmic transformation we see a strong positive correlation between the two variables, which is as expected. The size of the company's revenue directly translates to the acquisition price.
 
+To visualize the relationship between CPI and the log transformed MVICPrice we can plot a scatterplot:
+
 ```{r}
 ggplot(Df, aes(x = CPI_U, y = log(MVICPrice ))) +
   geom_point(size = 0.3, alpha = 0.2)  +
-  theme_minimal() +
-  theme(text = element_text(size=15)) +
   labs(title = "CPI to Log MVICPrice",
 x = "CPI", y = "Log(MVICPrice)")
-  
-  
 ```
 
+There doesn't seem to be a relationship between the two variables. The distribution of MVICPrice between the different CPI levels seems to be similar. We see slightly higher amounts of acquisitions with CPI between 210 and 240, which is due to a short deflation period and slower inflation after the financial crisis.
 
+### MVICPrice and FFR/Regulation variables
+
+Below is a scatterplot to visualize the relationship between the Federal Funds rate and the log transformed MVICPrice:
 
 ```{r}
 ggplot(Df, aes(x = FFR, y = log(MVICPrice) )) +
   geom_point(size = 0.3, alpha = 0.2) +
-  theme_minimal() +
-  theme(text = element_text(size=15)) +
   labs(title = "Federal Funds Rate to Log MVICPrice",
 x = "Federal Funds Rate (%)", y = "Log(MVICPrice)")
-  
 ```
 
+The scatterplot shows little or no relationship between the two variables. The MVICPrice distribution seems relatively constant over different Federal Funds rates. However, we see a large cluster of acquisitions with the Federal Funds rate near zero. This is due to the lenghtened time the rate was kept low during the stagnation period after the financial crisis os 2008. The rate was kept low due to stagnation worries, low GDP growth, to stimulate the economy. The rate was kept around 0 percent from late 2008 to late 2015, which is approximately 35 percent of the whole time period of the dataset.
+
+To visualize the distributions of the MVICPrice for the regulation variables I will use boxplots. Below is a boxplot visualizing the MVICPrice distribution before and after Regulation Fair Disclosure:
+
 ```{r}
-ggplot(Df, aes(y = log(MVICPrice), x = Reg_FD)) +
+ggplot(Df,  aes(y = log(MVICPrice), x = Reg_FD)) +
 geom_boxplot() +
-  theme_minimal() +
-  theme(text = element_text(size=15)) +
   labs(title = "Acquisition Prices Before and After Regulation FD",
 x = "Regulation FD enacted")
 ```
 
+There is visible difference between acquisition prices before and after the enactment of Regulation FD. The mean log MVICPrice is 2.5 higher before than after the enactment. After the regulation was enacted there is more variability in the values with a range from over 22.5 to almost 0. It is important to notice that the dataset only contains 1910 acquisitions before the regulation and over 25100 after as the regulation was enacted in october 2000.
+
+Below is a boxplot between SOX and MVICPrice:
+
 ```{r}
 ggplot(Df, aes(y = log(MVICPrice), x = SOX)) +
-geom_boxplot() +
-  theme_minimal() +
-  theme(text = element_text(size=15)) +
+  geom_boxplot() +
   labs(title = "Acquisition Prices Before and After SOX",
 x = "SOX enacted") 
-  
 ```
+
+The distribution before and after the enactment is quite similar to 
+
+Similar to Regulation FD there is a visible difference, however not as significant as for Regulation FD. The difference seems similar as with Regulation FD, however the difference between the means is much smaller. As with Regulation FD it is important to notice that the SOX variable captures more acquisitions after the enactment, 3530 before and over 23530 after. 
+
+
+Below is a boxplot between the Global Analyst Research Settlement and MVICPrice:
 
 ```{r}
 ggplot(Df, aes(y = log(MVICPrice), x = GARS)) +
 geom_boxplot() +
-  theme_minimal() +
-  theme(text = element_text(size=12.5)) +
-  labs(title = "Acquisition Prices Before and After Global Analyst Research Settlement",
+  labs(title = "Acquisition Prices Before and After the Global Analyst Research Settlement",
 x = "Global Analyst Research Settlement enacted")
 ```
+
+The Global Analyst Research Settlement has a similar MVICPrice distribution as Regulation FD and SOX, however the difference between before and after the enactment is becoming smaller. As all three regulations have a similar trend it is important to realize that this most likely due to the overlap these regulations have. All the regulation variables are a single point in time and look at the difference before and after. In the case of GARS, Reg FD and SOX the time difference is small so the distributions before and after do not differ much. This is due to all three regulation variables recording a large number of same transactions before and after.
+
+Below is a boxplot between the Jumpstart our Business Start-Ups act and MVICPrice:
+
 ```{r}
 ggplot(Df, aes(y = log(MVICPrice), x = JOBS)) +
 geom_boxplot() +
-  theme_minimal() +
-  theme(text = element_text(size=15)) +
-  labs(title = "Acquisition Prices Before and JOBS Act",
+  labs(title = "Acquisition Prices Before and After JOBS Act",
 x = "JOBS Act enacted")
 ```
+
+Unlike the other three regulations the JOBS act does not show a significant difference before and after the enactment. The distributions are very similar with some minor differences. 
+
+With the preliminary data analysis from the explanatory variables that are of interest for this study, Regulation FD shows the largest difference in MVICPrice distributions. The JOBS act and the Federal Funds rate show little or no effect on the response variable MVICPrice.
+
+
 ### MVICPrice Histogram
 
 ```{r}
 ggplot(Df, aes(x= log(MVICPrice))) +
   geom_histogram(binwidth = 0.5) +
-  theme_minimal() +
-  theme(text = element_text(size=18)) +
   labs(title = "MVICPrice Distribution",
 y = "Count", x = "Log(MVIC Price)")
 ```
@@ -342,7 +322,6 @@ y = "Count", x = "Log(MVIC Price)")
 ```{r}
 ggplot(Df, aes(x= log(NetSales))) +
   geom_histogram()
-
 ```
 ## Models
 
@@ -358,19 +337,22 @@ $$\widehat{log(MVICPrice)} = \hat{\beta}_0 + \hat{\beta}_1 * {FFR} +\hat{\beta}_
 We can run the model using the following code:
 
 ```{r}
-model_lm <- lm(log(MVICPrice) ~ FFR  + Reg_FD + SOX + GARS + JOBS  + CPI_U + log(NetSales), data = Df)
+model_lm <- lm(log(MVICPrice) ~ FFR + Reg_FD + SOX + GARS + JOBS + CPI_U + log(NetSales), data = Df)
 ```
 
-To assess the model
+To model results in the following statistics.
 
 ```{r}
 glance(model_lm)
 ```
 
+The model has an R squared of 0.785, however it is good to remember that we have a NetSales variable inputted in the model to control for variance. NetSales is highly correlated with the MVICPrice and is most likely the most predictive variable in the model and causes the r squared to increase significantly. The R squared for a model only using the variables of interest would be much lower as even though these variables might have an effect on the MVICPrice they show broader macroeconomic conditions and do not act as powerful predictors for single company transactions.
 
 ## Lasso
 
 The second model I looked at was a lasso regression, which is similar to multiple linear regression with one significant difference. Lasso uses shrinkage to assess the impact of different variables and if the impact is insignificant, it disregards the variable. However there is one significant issue with Lasso regression in this case. We are multiple factorized categorical variables to assess the impact of the regulation pieces on the MVICPrice. With Lasso the results for these categorical variables might become distorted due to the mechanics behind Lasso which is why I am disregarding the results.
+
+
 
 
 ```{r}
@@ -448,15 +430,17 @@ coefficients[2:7]
 
 These coefficients show the % change in MVICprice if everything else is constant. If we hold every other variable constant we can interpret them as follows:
 
-A unit increase in the Federal Funds rate will increase the MVICPrice by 2.9%.
+A unit increase in the Federal Funds rate will increase the MVICPrice by 2.75%.
 
-The enactment of Regulation FD resulted in a 44.54% decrease in the MVICPrice.
+The enactment of Regulation FD resulted in a 43.72% decrease in the MVICPrice.
 
-The enactment of the Sarbanes-Oxley acted resulted in a 10.53% decrease in the MVICPrice.
+The enactment of the Sarbanes-Oxley acted resulted in a 9.96% decrease in the MVICPrice.
 
-The enactment of the Global Analyst Research Settlement resulted in a 15.76% increase in the MVICPrice.
+The enactment of the Global Analyst Research Settlement resulted in a 21.14% increase in the MVICPrice.
 
-A unit increase in CPI_U will decrease the MVICPrice by 0.12%.
+The enactment of the Jumpstart our Business Start-ups Act resulted in a 5.43% increase in the MVICPrice.
+
+A unit increase in CPI_U will decrease the MVICPrice by 0.32%.
 
 
 For the NetSales variable the interpretation is different as both the explanatory and the response variables are log transformed. In this case we do not modify the original coefficient, but we interpret it as when the explanatory variable increases by 1% the response variable changes by the coefficient % when everything else is held constant. For the NetSales the interpretation is as follows:
@@ -484,8 +468,9 @@ When you have high growth in the economy, like between 2003-2008, the federal re
 
 Another issue with the study has to do with the implementation of the regulation variables. The variables used in the study are factor variables with two levels based on when the regulation in question was enacted. This poses an issue as the variables are simply one point in time and we look at the prices before and after that point. Even though a regulation piece might have an impact on the prices it is more likely that we are only seeing the differences before and after that point in time, which are probably affected by multiple other factors and not only the regulation piece. For example, Regulation FD was enacted in 2000, when the dot com boom was still going, the economy was growing, and the private acquisition market was at high levels. The variable catches the high levels before the regulation and after, which included two recessions and a long stagnation period which all affected the acquisitions market. The coefficient result do not speak fully to the direct impact of the regulation, but rather the overall change in the market before and after the regulation which can be attributed to multiple different factors. 
 
-In addition, three of the four regulation pieces were enacted in the early 2000's and only a small portion of the dataset has acquisitions before the dates and a large portion has acquisitions after the date. This assumes that the regulation will have a lasting and constant impact on the acquisitions from the enactment to 2018, which is probably not the case as companies adapt.
+Another issue with the regulation variable has to do with the number acquisitions before and after the enactment. Three of the four regulation pieces were enacted in the early 2000's and only a small portion of the dataset has acquisitions before the dates and a large portion has acquisitions after the date. This assumes that the regulation will have a lasting and constant impact on the acquisitions from the enactment to 2018, which is probably not the case as companies adapt.
 
 In conclusion the results of this study seem to be inconclusive. They seem to be contrary to what was expected, which is most likely due to the issue that all of these variables tend to be tied to overall macroeconomic environment. Even though statistically speaking we see significant impact from these variables there doesn’t seem to be any actual causal relationship, but rather a correlation to the conditions at that point in time.
 
 
+# Bibliography
